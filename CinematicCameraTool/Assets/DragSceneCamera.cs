@@ -7,22 +7,57 @@ public class DragSceneCamera : MonoBehaviour
 
     private Plane dragPlane;
     private Vector3 dragOffset;
-    private bool isDragging = false;
+    private bool isDragging;
 
-    void Update()
+    private HoverHighlighter highlighter;
+
+    private void Start()
+    {
+        highlighter = GetComponent<HoverHighlighter>();
+    }
+
+    private void Update()
     {
         if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
-            return;
-
-        if (Input.GetMouseButtonDown(0))
         {
-            Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
+            if (!isDragging && highlighter != null) highlighter.SetHighlight(false);
+            return;
+        }
 
-            if (Physics.Raycast(ray, out RaycastHit hit))
+        Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
+
+        if (isDragging)
+        {
+            // Keep the camera highlighted during drag
+            if (highlighter != null) highlighter.SetHighlight(true);
+
+            if (Input.GetMouseButton(0) && dragPlane.Raycast(ray, out float enter))
             {
-                if (hit.transform == transform)
+                Vector3 hitPoint = ray.GetPoint(enter);
+                Vector3 targetPos = hitPoint + dragOffset;
+                targetPos.y = transform.position.y;
+                transform.position = targetPos;
+            }
+
+            if (Input.GetMouseButtonUp(0))
+            {
+                isDragging = false;
+            }
+
+            return;
+        }
+
+        // Not dragging: handle hover and drag initiation
+        bool hovered = false;
+
+        if (Physics.Raycast(ray, out RaycastHit hit))
+        {
+            if (hit.transform == transform)
+            {
+                hovered = true;
+
+                if (Input.GetMouseButtonDown(0))
                 {
-                    // Lock the Y and create a drag plane
                     Vector3 planeOrigin = new Vector3(hit.point.x, transform.position.y, hit.point.z);
                     dragPlane = new Plane(Vector3.up, planeOrigin);
 
@@ -36,21 +71,6 @@ public class DragSceneCamera : MonoBehaviour
             }
         }
 
-        if (Input.GetMouseButtonUp(0))
-        {
-            isDragging = false;
-        }
-
-        if (isDragging && Input.GetMouseButton(0))
-        {
-            Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
-            if (dragPlane.Raycast(ray, out float enter))
-            {
-                Vector3 hitPoint = ray.GetPoint(enter);
-                Vector3 targetPos = hitPoint + dragOffset;
-                targetPos.y = transform.position.y; // Lock Y
-                transform.position = targetPos;
-            }
-        }
+        if (highlighter != null) highlighter.SetHighlight(hovered);
     }
 }
