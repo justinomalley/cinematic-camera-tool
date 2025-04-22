@@ -1,8 +1,9 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 /// <summary>
 /// Allows camera panning across the XZ plane using right-click drag,
-/// simulating an editor-style viewport. Y position stays fixed.
+/// and zooming in/out along the camera's forward vector using the scroll wheel.
 /// </summary>
 public class EditorStyleCameraPan : MonoBehaviour
 {
@@ -16,44 +17,97 @@ public class EditorStyleCameraPan : MonoBehaviour
     [SerializeField] private int minZ = -20;
     [SerializeField] private int maxZ = 20;
 
+    [Header("Zoom Settings")]
+    [SerializeField] private Transform cameraTransform;
+    [SerializeField] private float zoomSpeed = 5f;
+    [SerializeField] private float minZoomOffset = -10f;  // Zoom in
+    [SerializeField] private float maxZoomOffset = 10f;   // Zoom out
+
     private Vector3 dragOrigin;
     private Vector3 targetPosition;
     private bool isDragging;
+    
+    private Vector3 initialCameraLocalPosition;
 
     void Start()
     {
         targetPosition = transform.position;
+
+        if (cameraTransform == null)
+        {
+            Debug.LogWarning("Camera Transform not assigned. Disabling zoom.");
+        } else {
+            initialCameraLocalPosition = cameraTransform.localPosition;
+        }
     }
 
-    void Update()
+    private void Update()
     {
-        if (Input.GetMouseButtonDown(0)) // Right-click to start drag
+        HandlePanning();
+        HandleZoom();
+    }
+
+    private void HandlePanning()
+    {
+
+        if (Input.GetMouseButtonDown(1) && !IsHoveringUI())
         {
             dragOrigin = Input.mousePosition;
             isDragging = true;
         }
 
-        if (Input.GetMouseButtonUp(0))
+        if (Input.GetMouseButtonUp(1))
         {
             isDragging = false;
         }
 
-        if (isDragging && Input.GetMouseButton(0))
+        if (isDragging && Input.GetMouseButton(1))
         {
             Vector3 diff = Input.mousePosition - dragOrigin;
             Vector3 move = new Vector3(-diff.x, 0, -diff.y) * dragSpeed * Time.deltaTime;
 
             Vector3 right = transform.right;
-            Vector3 forward = Vector3.Cross(right, Vector3.up); // XZ plane forward
+            Vector3 forward = Vector3.Cross(right, Vector3.up); // Flattened forward
 
             targetPosition += right * move.x + forward * move.z;
             dragOrigin = Input.mousePosition;
         }
 
-        // Clamp to bounds before applying
         targetPosition.x = Mathf.Clamp(targetPosition.x, minX, maxX);
         targetPosition.z = Mathf.Clamp(targetPosition.z, minZ, maxZ);
 
         transform.position = Vector3.Lerp(transform.position, targetPosition, dragSmoothing);
+    }
+
+    private void HandleZoom()
+    {
+        if (cameraTransform == null)
+            return;
+
+        float scroll = Input.GetAxis("Mouse ScrollWheel");
+
+        if (Mathf.Approximately(scroll, 0f))
+            return;
+
+        // Flattened forward direction (XZ plane only)
+        Vector3 flatForward = cameraTransform.forward;
+        flatForward.y = 0f;
+        flatForward.Normalize();
+
+        // Apply scroll delta
+        Vector3 offset = cameraTransform.localPosition - initialCameraLocalPosition;
+        float projectedOffset = Vector3.Dot(offset, flatForward);
+
+        float newProjectedOffset = projectedOffset + scroll * zoomSpeed;
+
+        // Clamp new offset
+        if (newProjectedOffset < minZoomOffset || newProjectedOffset > maxZoomOffset)
+            return;
+
+        cameraTransform.localPosition += flatForward * scroll * zoomSpeed;
+    }
+
+    private bool IsHoveringUI() {
+        return EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
     }
 }
