@@ -1,8 +1,7 @@
 using UnityEngine;
-using UnityEngine.EventSystems;
 
 /// <summary>
-/// Allows camera panning across the XZ plane using right-click drag,
+/// Allows camera panning across the XZ plane using left-click drag,
 /// and zooming in/out along the camera's forward vector using the scroll wheel.
 /// </summary>
 public class EditorStyleCameraPan : MonoBehaviour
@@ -49,19 +48,21 @@ public class EditorStyleCameraPan : MonoBehaviour
 
     private void HandlePanning()
     {
+        if (!InputManager.Instance.CanPanCamera())
+            return;
 
-        if (Input.GetMouseButtonDown(1) && !IsHoveringUI())
+        if (InputManager.Instance.LeftMousePressedThisFrame)
         {
             dragOrigin = Input.mousePosition;
             isDragging = true;
         }
 
-        if (Input.GetMouseButtonUp(1))
+        if (InputManager.Instance.LeftMouseReleasedThisFrame)
         {
             isDragging = false;
         }
 
-        if (isDragging && Input.GetMouseButton(1))
+        if (isDragging && InputManager.Instance.LeftMouseDown)
         {
             Vector3 diff = Input.mousePosition - dragOrigin;
             Vector3 move = new Vector3(-diff.x, 0, -diff.y) * dragSpeed * Time.deltaTime;
@@ -105,9 +106,5 @@ public class EditorStyleCameraPan : MonoBehaviour
             return;
 
         cameraTransform.localPosition += flatForward * scroll * zoomSpeed;
-    }
-
-    private bool IsHoveringUI() {
-        return EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
     }
 }

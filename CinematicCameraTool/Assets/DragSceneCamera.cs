@@ -18,7 +18,7 @@ public class DragSceneCamera : MonoBehaviour
 
     private void Update()
     {
-        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+        if (InputManager.Instance.IsOverUI)
         {
             if (!isDragging && highlighter != null) highlighter.SetHighlight(false);
             return;
@@ -28,10 +28,9 @@ public class DragSceneCamera : MonoBehaviour
 
         if (isDragging)
         {
-            // Keep the camera highlighted during drag
             if (highlighter != null) highlighter.SetHighlight(true);
 
-            if (Input.GetMouseButton(0) && dragPlane.Raycast(ray, out float enter))
+            if (InputManager.Instance.LeftMouseDown && dragPlane.Raycast(ray, out float enter))
             {
                 Vector3 hitPoint = ray.GetPoint(enter);
                 Vector3 targetPos = hitPoint + dragOffset;
@@ -39,9 +38,10 @@ public class DragSceneCamera : MonoBehaviour
                 transform.position = targetPos;
             }
 
-            if (Input.GetMouseButtonUp(0))
+            if (InputManager.Instance.LeftMouseReleasedThisFrame)
             {
                 isDragging = false;
+                InputManager.Instance.SetDragging(false);
             }
 
             return;
@@ -56,7 +56,8 @@ public class DragSceneCamera : MonoBehaviour
             {
                 hovered = true;
 
-                if (Input.GetMouseButtonDown(0))
+                if (InputManager.Instance.LeftMousePressedThisFrame &&
+                    InputManager.Instance.CanDragObject())
                 {
                     Vector3 planeOrigin = new Vector3(hit.point.x, transform.position.y, hit.point.z);
                     dragPlane = new Plane(Vector3.up, planeOrigin);
@@ -66,6 +67,7 @@ public class DragSceneCamera : MonoBehaviour
                         Vector3 hitPoint = ray.GetPoint(enter);
                         dragOffset = transform.position - hitPoint;
                         isDragging = true;
+                        InputManager.Instance.SetDragging(true);
                     }
                 }
             }
