@@ -4,7 +4,7 @@ using UnityEngine;
 /// Allows camera panning across the XZ plane using left-click drag,
 /// and zooming in/out along the camera's forward vector using the scroll wheel.
 /// </summary>
-public class EditorStyleCameraPan : MonoBehaviour
+public class EditorCamera : MonoBehaviour
 {
     [Header("Panning Settings")]
     [SerializeField] private float dragSpeed = 0.1f;
@@ -19,13 +19,13 @@ public class EditorStyleCameraPan : MonoBehaviour
     [Header("Zoom Settings")]
     [SerializeField] private Transform cameraTransform;
     [SerializeField] private float zoomSpeed = 5f;
-    [SerializeField] private float minZoomOffset = -10f;  // Zoom in
-    [SerializeField] private float maxZoomOffset = 10f;   // Zoom out
+    [SerializeField] private float minZoomOffset = -10f;
+    [SerializeField] private float maxZoomOffset = 10f;
 
     private Vector3 dragOrigin;
     private Vector3 targetPosition;
     private bool isDragging;
-    
+
     private Vector3 initialCameraLocalPosition;
 
     void Start()
@@ -35,12 +35,14 @@ public class EditorStyleCameraPan : MonoBehaviour
         if (cameraTransform == null)
         {
             Debug.LogWarning("Camera Transform not assigned. Disabling zoom.");
-        } else {
+        }
+        else
+        {
             initialCameraLocalPosition = cameraTransform.localPosition;
         }
     }
 
-    private void Update()
+    public void UpdateSystem()
     {
         HandlePanning();
         HandleZoom();
@@ -48,21 +50,23 @@ public class EditorStyleCameraPan : MonoBehaviour
 
     private void HandlePanning()
     {
-        if (!InputManager.Instance.CanPanCamera())
+        if (!InputManager.CanPanCamera)
             return;
 
-        if (InputManager.Instance.LeftMousePressedThisFrame)
+        if (InputManager.LeftMousePressedThisFrame && InputManager.CanPanCamera)
         {
             dragOrigin = Input.mousePosition;
             isDragging = true;
+            InputManager.SetPanningCamera(true);
         }
 
-        if (InputManager.Instance.LeftMouseReleasedThisFrame)
+        if (InputManager.LeftMouseReleasedThisFrame)
         {
             isDragging = false;
+            InputManager.SetPanningCamera(false);
         }
 
-        if (isDragging && InputManager.Instance.LeftMouseDown)
+        if (isDragging && InputManager.LeftMouseDown)
         {
             Vector3 diff = Input.mousePosition - dragOrigin;
             Vector3 move = new Vector3(-diff.x, 0, -diff.y) * dragSpeed * Time.deltaTime;
@@ -86,22 +90,18 @@ public class EditorStyleCameraPan : MonoBehaviour
             return;
 
         float scroll = Input.GetAxis("Mouse ScrollWheel");
-
         if (Mathf.Approximately(scroll, 0f))
             return;
 
-        // Flattened forward direction (XZ plane only)
         Vector3 flatForward = cameraTransform.forward;
         flatForward.y = 0f;
         flatForward.Normalize();
 
-        // Apply scroll delta
         Vector3 offset = cameraTransform.localPosition - initialCameraLocalPosition;
         float projectedOffset = Vector3.Dot(offset, flatForward);
 
         float newProjectedOffset = projectedOffset + scroll * zoomSpeed;
 
-        // Clamp new offset
         if (newProjectedOffset < minZoomOffset || newProjectedOffset > maxZoomOffset)
             return;
 

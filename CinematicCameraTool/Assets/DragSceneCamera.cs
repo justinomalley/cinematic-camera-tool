@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.EventSystems;
 
 public class DragSceneCamera : MonoBehaviour
 {
@@ -16,11 +15,19 @@ public class DragSceneCamera : MonoBehaviour
         highlighter = GetComponent<HoverHighlighter>();
     }
 
-    private void Update()
+    public void UpdateSystem()
     {
-        if (InputManager.Instance.IsOverUI)
+        if (InputManager.IsOverUI)
         {
-            if (!isDragging && highlighter != null) highlighter.SetHighlight(false);
+            if (!isDragging && highlighter != null)
+                highlighter.SetHighlight(false);
+            return;
+        }
+
+        if (InputManager.IsPanningCamera)
+        {
+            if (highlighter != null)
+                highlighter.SetHighlight(false);
             return;
         }
 
@@ -28,9 +35,10 @@ public class DragSceneCamera : MonoBehaviour
 
         if (isDragging)
         {
-            if (highlighter != null) highlighter.SetHighlight(true);
+            if (highlighter != null)
+                highlighter.SetHighlight(true);
 
-            if (InputManager.Instance.LeftMouseDown && dragPlane.Raycast(ray, out float enter))
+            if (InputManager.LeftMouseDown && dragPlane.Raycast(ray, out float enter))
             {
                 Vector3 hitPoint = ray.GetPoint(enter);
                 Vector3 targetPos = hitPoint + dragOffset;
@@ -38,10 +46,10 @@ public class DragSceneCamera : MonoBehaviour
                 transform.position = targetPos;
             }
 
-            if (InputManager.Instance.LeftMouseReleasedThisFrame)
+            if (InputManager.LeftMouseReleasedThisFrame)
             {
                 isDragging = false;
-                InputManager.Instance.SetDragging(false);
+                InputManager.SetDraggingObject(false);
             }
 
             return;
@@ -56,8 +64,7 @@ public class DragSceneCamera : MonoBehaviour
             {
                 hovered = true;
 
-                if (InputManager.Instance.LeftMousePressedThisFrame &&
-                    InputManager.Instance.CanDragObject())
+                if (InputManager.LeftMousePressedThisFrame && InputManager.CanDragObject)
                 {
                     Vector3 planeOrigin = new Vector3(hit.point.x, transform.position.y, hit.point.z);
                     dragPlane = new Plane(Vector3.up, planeOrigin);
@@ -67,12 +74,13 @@ public class DragSceneCamera : MonoBehaviour
                         Vector3 hitPoint = ray.GetPoint(enter);
                         dragOffset = transform.position - hitPoint;
                         isDragging = true;
-                        InputManager.Instance.SetDragging(true);
+                        InputManager.SetDraggingObject(true);
                     }
                 }
             }
         }
 
-        if (highlighter != null) highlighter.SetHighlight(hovered);
+        if (highlighter != null)
+            highlighter.SetHighlight(hovered);
     }
 }
