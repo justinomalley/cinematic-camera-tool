@@ -17,6 +17,10 @@ public class SceneCameraTransformUI : MonoBehaviour
     [SerializeField] private TMP_InputField rotationXInput;
     [SerializeField] private TMP_InputField rotationYInput;
     [SerializeField] private TMP_InputField rotationZInput;
+    
+    [SerializeField] private TMP_InputField positionXInput;
+    [SerializeField] private TMP_InputField positionYInput;
+    [SerializeField] private TMP_InputField positionZInput;
 
     private void Start()
     {
@@ -39,14 +43,24 @@ public class SceneCameraTransformUI : MonoBehaviour
         rotationXInput.onEndEdit.AddListener(_ => OnRotationInputChanged());
         rotationYInput.onEndEdit.AddListener(_ => OnRotationInputChanged());
         rotationZInput.onEndEdit.AddListener(_ => OnRotationInputChanged());
+        
+        // Position input fields
+        positionXInput.onEndEdit.AddListener(_ => OnPositionInputChanged());
+        positionYInput.onEndEdit.AddListener(_ => OnPositionInputChanged());
+        positionZInput.onEndEdit.AddListener(_ => OnPositionInputChanged());
     }
 
     public void RefreshFromCamera()
     {
         Vector3 pos = targetCamera.position;
         Vector3 rot = targetCamera.eulerAngles;
-
-        // Position Y
+        
+        // Position
+        positionXInput.text = pos.x.ToString("F1");
+        positionYInput.text = pos.y.ToString("F1");
+        positionZInput.text = pos.z.ToString("F1");
+        
+        // Height Slider (same as Y position)
         heightSlider.SetValueWithoutNotify(pos.y);
         heightInput.text = pos.y.ToString("F2");
 
@@ -68,6 +82,7 @@ public class SceneCameraTransformUI : MonoBehaviour
         pos.y = newY;
         targetCamera.position = pos;
         heightInput.text = newY.ToString("F2");
+        positionYInput.text = newY.ToString("F2");
     }
 
     private void OnHeightInputChanged(string value)
@@ -107,5 +122,15 @@ public class SceneCameraTransformUI : MonoBehaviour
         rotationXSlider.SetValueWithoutNotify(x);
         rotationYSlider.SetValueWithoutNotify(y);
         rotationZSlider.SetValueWithoutNotify(z);
+    }
+    
+    private void OnPositionInputChanged()
+    {
+        float.TryParse(positionXInput.text, out float x);
+        float.TryParse(positionYInput.text, out float y);
+        float.TryParse(positionZInput.text, out float z);
+
+        targetCamera.position = new Vector3(x, y, z);
+        heightInput.text = y.ToString("F2");
     }
 }
