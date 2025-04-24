@@ -30,21 +30,21 @@ public class CameraTimelineController : MonoBehaviour
             timestamp = Time.time // You can update this logic later for relative timing
         };
 
+        CameraTransition transition = null;
+
         // Insert transition before the new keyframe if there’s already one present
-        if (timeline.elements.Count > 0 && timeline.elements[^1] is CameraKeyframe)
-        {
-            timeline.elements.Add(new CameraTransition
-            {
+        if (timeline.elements.Count > 0 && timeline.elements[^1] is CameraKeyframe) {
+            transition = new CameraTransition {
                 type = TransitionType.Lerp,
                 duration = 1f,
                 timestamp = Time.time // optional, currently unused
-            });
+            };
+            timeline.elements.Add(transition);
         }
 
         timeline.elements.Add(keyframe);
         DebugPrintKeyframe(keyframe);
-
-        // TODO: Trigger UI update or notify timeline view
+        TimelineUIController.Instance.AddTimelineVisuals(keyframe, transition);
     }
     
     public void DebugPrintKeyframe(CameraKeyframe keyframe)
