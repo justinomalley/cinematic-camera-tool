@@ -60,15 +60,79 @@ public class CameraTimelinePlayback : MonoBehaviour
 
         for (int i = 0; i < elements.Count; i++)
         {
-            if (elements[i] is CameraKeyframe keyframe)
+            if (elements[i] is CameraKeyframe startKeyframe)
             {
-                cinematicCamera.position = keyframe.position;
-                cinematicCamera.eulerAngles = keyframe.eulerRotation;
+                // Snap to the start keyframe
+                cinematicCamera.position = startKeyframe.position;
+                cinematicCamera.eulerAngles = startKeyframe.eulerRotation;
 
-                if (i + 1 < elements.Count && elements[i + 1] is CameraTransition transition)
+                // If a transition and next keyframe exist
+                if (i + 2 < elements.Count && elements[i + 1] is CameraTransition transition && elements[i + 2] is CameraKeyframe endKeyframe)
                 {
-                    yield return new WaitForSeconds(transition.duration);
-                    i++; // Skip transition
+                    if (transition.type == TransitionType.Cut)
+                    {
+                        yield return new WaitForSeconds(transition.duration);
+                        cinematicCamera.position = endKeyframe.position;
+                        cinematicCamera.eulerAngles = endKeyframe.eulerRotation;
+                    }
+                    else
+                    {
+                        float elapsed = 0f;
+                        float duration = Mathf.Max(transition.duration, 0.01f); // Prevent zero duration
+
+                        // --- Position control points ---
+                        Vector3 previousPosition = startKeyframe.position; // p0
+                        Vector3 startPosition = startKeyframe.position;    // p1
+                        Vector3 endPosition = endKeyframe.position;        // p2
+                        Vector3 nextNextPosition = endKeyframe.position;   // p3
+
+                        if (transition.type == TransitionType.Spline)
+                        {
+                            if (i - 2 >= 0 && elements[i - 2] is CameraKeyframe previousKeyframe)
+                                previousPosition = previousKeyframe.position;
+
+                            if (i + 4 < elements.Count && elements[i + 4] is CameraKeyframe nextNextKeyframe)
+                                nextNextPosition = nextNextKeyframe.position;
+                        }
+
+                        // --- Rotation start and end ---
+                        Quaternion startRotation = Quaternion.Euler(startKeyframe.eulerRotation);
+                        Quaternion endRotation = Quaternion.Euler(endKeyframe.eulerRotation);
+
+                        // --- Interpolation loop ---
+                        while (elapsed < duration)
+                        {
+                            float linearT = elapsed / duration;
+                            // SmoothStep eases in and out
+                            float t = Mathf.SmoothStep(0f, 1f, linearT);
+
+                            // --- Position interpolation ---
+                            Vector3 newPosition;
+                            if (transition.type == TransitionType.Lerp || previousPosition == startPosition || endPosition == nextNextPosition)
+                            {
+                                newPosition = Vector3.Lerp(startPosition, endPosition, t);
+                            }
+                            else
+                            {
+                                newPosition = CatmullRom(previousPosition, startPosition, endPosition, nextNextPosition, t);
+                            }
+
+                            // --- Rotation interpolation ---
+                            Quaternion newRotation = Quaternion.Slerp(startRotation, endRotation, t);
+
+                            cinematicCamera.position = newPosition;
+                            cinematicCamera.rotation = newRotation;
+
+                            elapsed += Time.deltaTime;
+                            yield return null;
+                        }
+
+                        // Snap to exact final position/rotation
+                        cinematicCamera.position = endPosition;
+                        cinematicCamera.eulerAngles = endKeyframe.eulerRotation;
+                    }
+
+                    i++; // Skip the transition
                 }
             }
         }
@@ -126,5 +190,16 @@ public class CameraTimelinePlayback : MonoBehaviour
                 return keyframe;
         }
         return null;
+    }
+
+    // ---- Catmull-Rom spline helper ----
+    private static Vector3 CatmullRom(Vector3 prev, Vector3 start, Vector3 end, Vector3 nextNext, float t)
+    {
+        return 0.5f * (
+            2f * start +
+            (-prev + end) * t +
+            (2f * prev - 5f * start + 4f * end - nextNext) * (t * t) +
+            (-prev + 3f * start - 3f * end + nextNext) * (t * t * t)
+        );
     }
 }
