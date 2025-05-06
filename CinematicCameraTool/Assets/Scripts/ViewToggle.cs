@@ -18,8 +18,14 @@ public class ViewToggle : MonoBehaviour
     [Header("Active Button Colors")]
     public Color activeColor = new Color(1f, 0.8f, 0.2f); // yellowish
     public Color inactiveColor = Color.white;
+    
+    [SerializeField] 
+    private CameraTimelinePlayback playbackController;
 
     private RenderTexture previewTexture;
+
+    [SerializeField]
+    private GameObject cameraModel;
 
     private void Start() {
         previewTexture = cinematicCamera.targetTexture;
@@ -31,11 +37,13 @@ public class ViewToggle : MonoBehaviour
     {
         editorUI.SetActive(true);
         previewUI.SetActive(false);
-
+        
+        SetCameraModelActive(true);
         editorCamera.enabled = true;
         cinematicCamera.targetTexture = previewTexture;
 
         UpdateButtonStates(editorButton, previewButton);
+        playbackController.OnViewChanged();
     }
 
     public void SetPreviewView()
@@ -43,10 +51,12 @@ public class ViewToggle : MonoBehaviour
         editorUI.SetActive(false);
         previewUI.SetActive(true);
 
+        SetCameraModelActive(false);
         editorCamera.enabled = false;
         cinematicCamera.targetTexture = null;
 
         UpdateButtonStates(previewButton, editorButton);
+        playbackController.OnViewChanged();
     }
 
     private void UpdateButtonStates(Button active, Button inactive)
@@ -54,4 +64,17 @@ public class ViewToggle : MonoBehaviour
         active.GetComponent<Image>().color = activeColor;
         inactive.GetComponent<Image>().color = inactiveColor;
     }
+    
+    public void SetCameraModelActive(bool active)
+    {
+        if (cameraModel == null) return;
+
+        // Disable all renderers under the cameraModel parent
+        var renderers = cameraModel.GetComponentsInChildren<Renderer>(true);
+        foreach (var renderer in renderers)
+        {
+            renderer.enabled = active;
+        }
+    }
+
 }

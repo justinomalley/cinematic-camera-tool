@@ -11,10 +11,7 @@ namespace CameraTypes
     }
 
     [System.Serializable]
-    public abstract class TimelineElement
-    {
-        public float timestamp;
-    }
+    public abstract class TimelineElement {}
 
     [System.Serializable]
     public class CameraKeyframe : TimelineElement

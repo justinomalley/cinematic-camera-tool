@@ -27,7 +27,6 @@ public class CameraTimelineController : MonoBehaviour
         {
             position = cameraToRecord.position,
             eulerRotation = cameraToRecord.eulerAngles,
-            timestamp = Time.time // You can update this logic later for relative timing
         };
 
         CameraTransition transition = null;
@@ -35,9 +34,8 @@ public class CameraTimelineController : MonoBehaviour
         // Insert transition before the new keyframe if there’s already one present
         if (timeline.elements.Count > 0 && timeline.elements[^1] is CameraKeyframe) {
             transition = new CameraTransition {
-                type = TransitionType.Lerp,
+                type = TransitionType.Cut,
                 duration = 1f,
-                timestamp = Time.time // optional, currently unused
             };
             timeline.elements.Add(transition);
         }
@@ -58,6 +56,19 @@ public class CameraTimelineController : MonoBehaviour
         Debug.Log($"Keyframe: Pos({keyframe.position.x:F2}, {keyframe.position.y:F2}, {keyframe.position.z:F2}) | " +
                   $"Rot({keyframe.eulerRotation.x:F1}, {keyframe.eulerRotation.y:F1}, {keyframe.eulerRotation.z:F1})");
     }
+    
+    public CameraTimeline GetTimeline()
+    {
+        return timeline;
+    }
 
-    // TODO: Add methods for PlayTimeline(), ClearTimeline(), RemoveKeyframe(), etc.
+    public CameraKeyframe GetFirstKeyframe()
+    {
+        foreach (var elem in timeline.elements)
+        {
+            if (elem is CameraKeyframe keyframe)
+                return keyframe;
+        }
+        return null;
+    }
 }
