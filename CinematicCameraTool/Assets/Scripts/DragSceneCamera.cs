@@ -3,6 +3,8 @@ using UnityEngine;
 public class DragSceneCamera : MonoBehaviour
 {
     [SerializeField] private Camera mainCamera;
+    
+    public event System.Action OnPositionChanged;
 
     private Plane dragPlane;
     private Vector3 dragOffset;
@@ -44,6 +46,7 @@ public class DragSceneCamera : MonoBehaviour
                 Vector3 targetPos = hitPoint + dragOffset;
                 targetPos.y = transform.position.y;
                 transform.position = targetPos;
+                OnPositionChanged?.Invoke();
             }
 
             if (InputManager.LeftMouseReleasedThisFrame)

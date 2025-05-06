@@ -24,8 +24,19 @@ public class SceneCameraTransformUI : MonoBehaviour
 
     private void Start()
     {
+        var drag = targetCamera.GetComponent<DragSceneCamera>();
+        if (drag != null)
+            drag.OnPositionChanged += RefreshFromCamera;
+        
         SetupListeners();
         RefreshFromCamera(); // initialize values on start
+    }
+    
+    private void OnDestroy()
+    {
+        var drag = targetCamera.GetComponent<DragSceneCamera>();
+        if (drag != null)
+            drag.OnPositionChanged -= RefreshFromCamera;
     }
 
     private void SetupListeners()
