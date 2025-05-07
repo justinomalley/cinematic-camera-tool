@@ -12,6 +12,31 @@ Supports camera panning, zooming, drag-and-drop positioning, and manual transfor
 
 ---
 
+## How to Use the Cinematic Camera Tool
+
+### Editor Mode
+1. **Move around the scene**  
+   • Left-click and drag on empty space to pan the view  
+   • Scroll wheel to zoom in and out
+
+2. **Position the camera**  
+   • Left-click and drag the camera model to move it
+
+3. **Create keyframes**  
+   • Click *Add Keyframe* to save the current camera position and rotation
+
+4. **Edit keyframes**  
+   • Adjust camera values using the sliders and text fields
+
+5. **Set transitions**  
+   • Choose the type and duration of transitions between keyframes
+
+### Preview Mode
+- Click **Start** to play the cinematic sequence  
+- Click **Stop** to halt playback
+
+---
+
 ## Features
 
 - Keyframe-based camera animation system
